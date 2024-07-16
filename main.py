@@ -6,6 +6,7 @@ import random
 
 # Initialising PyGame
 pygame.init()
+target_fps = 999
 
 # Triangle coordinates
 ax = 0
@@ -18,9 +19,11 @@ A = (ax, ay)
 B = (bx, by)
 C = (cx, cy)
 
-# Making surface
-surface = pygame.display.set_mode((bx, cy))
+# Making screen and surfaces
+screen = pygame.display.set_mode((bx, cy))
 pygame.display.set_caption('Sierpiński Triangle Chaos Game')
+points_surface = pygame.Surface((bx, cy))
+lines_surface = pygame.Surface((bx, cy), pygame.SRCALPHA)
 
 def random_triangle(vert1, vert2, vert3):
     """
@@ -37,15 +40,14 @@ triangle_line_colour = (255, 0, 0)
 triangle_line_width = 3
 point_colour = (0, 255, 0)
 new_line_colour = (255, 255, 0)
-initial_point_colour = (255, 0, 0)
-initial_point_radius = 5
+new_point_colour = (255, 0, 255)
+new_point_radius = 5
 current_point = random_triangle(A, B, C)
 
-surface.fill(background_colour)
-pygame.draw.line(surface, triangle_line_colour, A, B, triangle_line_width)
-pygame.draw.line(surface, triangle_line_colour, A, C, triangle_line_width)
-pygame.draw.line(surface, triangle_line_colour, B, C, triangle_line_width)
-pygame.draw.circle(surface, initial_point_colour, current_point, initial_point_radius)
+points_surface.fill(background_colour)
+pygame.draw.line(points_surface, triangle_line_colour, A, B, triangle_line_width)
+pygame.draw.line(points_surface, triangle_line_colour, A, C, triangle_line_width)
+pygame.draw.line(points_surface, triangle_line_colour, B, C, triangle_line_width)
 pygame.display.flip()
 
 def Sierpiński(xy, A, B, C):
@@ -54,13 +56,16 @@ def Sierpiński(xy, A, B, C):
     if target == 'a':
         x = (xy[0] + A[0]) / 2
         y = (xy[1] + A[1]) / 2
+        target = A
     elif target == 'b':
         x = (xy[0] + B[0]) / 2
         y = (xy[1] + B[1]) / 2
+        target = B
     else:
         x = (xy[0] + C[0]) / 2
         y = (xy[1] + C[1]) / 2
-    return (int(x), int(y))
+        target = C
+    return (int(x), int(y)), target
 
 
 # PyGame loop
@@ -71,8 +76,19 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
-    new_point = Sierpiński(current_point, A, B, C)
-    surface.set_at(new_point, point_colour)
+    lines_surface.fill((0, 0, 0, 0))
+
+    new_point, target = Sierpiński(current_point, A, B, C)
+    points_surface.set_at(new_point, point_colour)
+    pygame.draw.aaline(lines_surface, new_line_colour, current_point, target)
+    pygame.draw.circle(lines_surface, new_point_colour, current_point, new_point_radius)
+    pygame.draw.circle(lines_surface, new_point_colour, target, new_point_radius)
+    pygame.draw.circle(lines_surface, new_point_colour, new_point, new_point_radius)
     current_point = new_point
     
+    screen.blit(points_surface, (0, 0))
+    screen.blit(lines_surface, (0, 0))
+
     pygame.display.flip()
+
+    pygame.time.Clock().tick(target_fps)
